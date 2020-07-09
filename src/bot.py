@@ -1,11 +1,11 @@
 from environment import token, channel
 from phrases.help import roster as help_roster
-
 import database
+
 import discord
 from discord.ext import commands
 
-db = Database()
+db = database.connection()
 
 client = commands.Bot(command_prefix='!')
 client.remove_command('help')
@@ -20,7 +20,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    alertChannel = client.get_channel(env.channel.alert)
+    alertChannel = client.get_channel(channel.alert)
 
     if message.channel.id == alertChannel.id:
         await alertChannel.send('<@&724642211337207909>')
@@ -30,7 +30,7 @@ async def on_message(message):
 
 @client.event
 async def on_member_remove(user):
-    systemChannel = client.get_channel(env.channel.system)
+    systemChannel = client.get_channel(channel.system)
 
     db.clearUser(user.id)
 
@@ -313,4 +313,4 @@ async def remove(ctx, *, pid):
         await ctx.send('Player ID Name {0} does not exist.'.format(pid))
 
 
-client.run(env.token)
+client.run(token)

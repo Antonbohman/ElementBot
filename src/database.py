@@ -1,7 +1,7 @@
 from environment import db
 import mysql.connector as mysql
 
-class Database:    
+class connection:    
     def __init__(self):
         self.con = mysql.connect(
             host = db.host,
@@ -10,7 +10,7 @@ class Database:
             database = db.database
         )
         
-        self.cursor = connect.cursor(prepared=True,)
+        self.cursor = self.con.cursor(prepared=True,)
         
     def findUser(self, id):
         query = "SELECT * FROM roster WHERE DiscordID = ? AND Deleted = 0"
