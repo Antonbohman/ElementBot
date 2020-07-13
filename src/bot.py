@@ -1,5 +1,5 @@
 from environment import token, channel
-from phrases.help import roster as help_roster
+from phrases.help import roster, guide as help_roster, help_guide
 import database
 
 import discord
@@ -32,7 +32,7 @@ async def on_message(message):
 async def on_member_remove(user):
     systemChannel = client.get_channel(channel.system)
 
-    db.clearUser(user.id)
+    db.user.clear(user.id)
 
     await systemChannel.send('User {0}<@{1}> with ID <{1}> left the discord server.'.format(user.display_name, user.id))
 
@@ -51,18 +51,32 @@ def if_roster(ctx):
     rosterChannel = client.get_channel(channel.roster)
     return ctx.message.channel.id == rosterChannel.id
 
+def if_guide(ctx):
+    guideChannel = client.get_channel(channel.guide)
+    return ctx.message.channel.id == guideChannel.id
+
+def if_debug(ctx):
+    debugChannel = client.get_channel(channel.debug)
+    return ctx.message.channel.id == debugChannel.id
+
 
 #Setup custom commands
 @client.command(pass_context=True)
-@commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def help(ctx):
-    embed = discord.Embed(
-        title='Roster Commands',
-        description=help_roster,
-        color=0xeeeeee
-    )
-    
+    if if_roster(ctx):
+        embed = discord.Embed(
+            title='Roster Commands',
+            description=help_roster,
+            color=0xeeeeee
+        )
+    elif if_guide(ctx): 
+        embed = discord.Embed(
+            title='Index Commands',
+            description=help_guide,
+            color=0xeeeeee
+        )
+        
     await ctx.send(content=None, embed=embed,)
 
 
@@ -95,7 +109,7 @@ async def roster(ctx):
     desc = '\u200b ' * 155
     
     members = []
-    data = db.allPlayers();
+    data = db.player.catalogue();
     
     i = 1
     for member in data:
@@ -103,7 +117,7 @@ async def roster(ctx):
         name = str(i)+': '+str(member[1])
         
         chars = []
-        subdata = allCharacterBoundPlayer(pid)
+        subdata = db.character.catalogue(pid)
         
         if len(subdata):
             content = ""
@@ -156,13 +170,13 @@ async def roster(ctx):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def verify(ctx, *, pid):
-    data = db.findUser(ctx.message.author.id)
+    data = db.user.find(ctx.message.author.id)
 
     if not len(data):
-        data = db.findPlayer(pid)
+        data = db.player.find(pid)
         
         if len(data):
-            db.verifyUser(ctx.message.author.id, data[0][0])
+            db.user.verify(ctx.message.author.id, data[0][0])
             
             await ctx.send('You have succesfully been verified and linked.')
         else:
@@ -175,16 +189,16 @@ async def verify(ctx, *, pid):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def reg(ctx, *, name):
-    data = db.findUser(ctx.message.author.id)
+    data = db.user.find(ctx.message.author.id)
 
     if len(data):
         pid = data[0][0]
         user = data[0][1]
         
-        data = db.findCharacter(pid, name)
+        data = db.character.find(pid, name)
 
         if not len(data):
-            db.bindCharacter(pid, name)
+            db.character.bind(pid, name)
             
             await ctx.send("A character with the name {0} has now been bound to {1}.".format(name, user))
         else:
@@ -197,17 +211,17 @@ async def reg(ctx, *, name):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def unreg(ctx, *, name):
-    data = db.findUser(ctx.message.author.id)
+    data = db.user.find(ctx.message.author.id)
 
     if len(data):
         pid = data[0][0]
         
-        data = db.findCharacter(pid, name)
+        data = db.character.find(pid, name)
         
         if len(data):
             cid = data[0][0]
             
-            db.unbindCharacter(cid)
+            db.character.unbind(cid)
 
             await ctx.send("{0} has been unbound and doesn't exist anymore.".format(name))
         else:
@@ -220,34 +234,34 @@ async def unreg(ctx, *, name):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def level(ctx, name, acr, lv: int):
-    data = db.findUser(ctx.message.author.id)
+    data = db.user.find(ctx.message.author.id)
 
     if len(data):
         pid = data[0][0]
         
-        data = db.findCharacter(pid, name)
+        data = db.character.find(pid, name)
         
         if len(data):
             cid = data[0][0]
             
             if acr == 'HUN':
-                prepared = db.setCharacterHunter
+                prepared = db.character.job.hunter
             elif acr == 'FIG':
-                prepared = db.setCharacterFighter
+                prepared = db.character.job.fighter
             elif acr == 'RAN':
-                prepared = db.setCharacterRanger
+                prepared = db.character.job.ranger
             elif acr == 'GUN':
-                prepared = db.setCharacterGunner
+                prepared = db.character.job.gunner
             elif acr == 'FOR':
-                prepared = db.setCharacterForce
+                prepared = db.character.job.force
             elif acr == 'TEC':
-                prepared = db.setCharacterTechter
+                prepared = db.character.job.techter
             elif acr == 'BRA':
-                prepared = db.setCharacterBraver
+                prepared = db.character.job.braver
             elif acr == 'BOU':
-                prepared = db.setCharacterBouncer
+                prepared = db.character.job.bouncer
             elif acr == 'SUM':
-                prepared = db.setCharacterSummoner
+                prepared = db.character.job.summoner
             else:
                 prepared = False;
             
@@ -266,17 +280,17 @@ async def level(ctx, name, acr, lv: int):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def levelall(ctx, name, hun: int, fig: int, ran: int, gun: int, forc: int, tec: int, bra: int, bou: int, summ: int):
-    data = db.findUser(ctx.message.author.id)
+    data = db.user.find(ctx.message.author.id)
 
     if len(data):
         pid = data[0][0]
         
-        data = db.findCharacter(pid, name)
+        data = db.character.find(pid, name)
         
         if len(data):
             cid = data[0][0]
             
-            db.setCharacterLevels(cid, [hun, fig, ran, gun, forc, tec, bra, bou, summ])
+            db.character.job.update(cid, [hun, fig, ran, gun, forc, tec, bra, bou, summ])
                 
             await ctx.send("The class levels has been updated for {0}.".format(name))
         else:
@@ -289,10 +303,10 @@ async def levelall(ctx, name, hun: int, fig: int, ran: int, gun: int, forc: int,
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer')
 async def member(ctx, date, *, pid):
-    data = db.findPlayer(pid)
+    data = db.player.find(pid)
 
     if not len(data):
-        db.addPlayer(pid, date)
+        db.player.add(pid, date)
         
         await ctx.send('Player ID Name {0} has succesfully been added.'.format(pid))
     else:
@@ -303,14 +317,40 @@ async def member(ctx, date, *, pid):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer')
 async def remove(ctx, *, pid):
-    data = db.findPlayer(pid)
+    data = db.palyer.find(pid)
 
     if len(data):
-        db.deletePlayer(data[0][0], date)
+        db.player.delete(data[0][0], date)
         
         await ctx.send('Player ID Name {0} has succesfully been removed.'.format(pid))
     else:
         await ctx.send('Player ID Name {0} does not exist.'.format(pid))
+
+
+@client.command(name='createIndex')
+@commands.check(if_guide)
+@commands.has_any_role('Leader', 'Officer')
+async def createIndex(ctx):
+    await ctx.message.delete()
+    
+    embed = discord.Embed(
+        title='Index',
+        description="",
+        color=0xeeeeee
+    )
+
+    await message = ctx.send(content=None, embed=embed,)
+    
+    db.index.update(message.id)
+
+
+@client.command(name='clearIndex')
+@commands.check(if_guide)
+@commands.has_any_role('Leader', 'Officer')
+async def clearIndexDB(ctx):
+    await ctx.message.delete()
+
+    db.index.clear()
 
 
 client.run(token)

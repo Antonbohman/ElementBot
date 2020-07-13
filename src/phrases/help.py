@@ -31,4 +31,6 @@ Date should be formated as *YYYY-MM-DD*
 **!remove <Player ID Name>**
 - Remove Player ID Name from the roster"""
 
-
+#Help text for guide channel
+guide = """Help for indexing the guide...
+"""
