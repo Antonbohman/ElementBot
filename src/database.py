@@ -4,13 +4,13 @@ import mysql.connector as mysql
 class connection:
     #Constructor of connection and init of classes
     def __init__(self):
-        self.con = mysql.connect(
+        self.connection = mysql.connect(
             host = db.host,
             user = db.user,
             passwd = db.passwd,
             database = db.database
         )
-        self.cursor = self.con.cursor(prepared=True,)
+        self.cursor = self.connection.cursor(prepared=True,)
         self.user = self.user(self)
         self.player = self.player(self)
         self.character = self.character(self)
@@ -24,7 +24,7 @@ class connection:
     
     def commit(self, query, values):
         self.cursor.execute(query, values)
-        return self.cursor.fetchall()
+        self.connection.commit()
         
     
     class user:
@@ -74,7 +74,7 @@ class connection:
     class character:
         def __init__(self, db):
             self.db = db
-            self.job = self.user(self, db)
+            self.job = self.job(db)
             
         def find(self, pid, name):
             query = "SELECT * FROM roster_char WHERE PID = ? AND Name = ? AND Deleted = 0"
@@ -150,7 +150,7 @@ class connection:
     class index:
         def __init__(self, db):
             self.db = db   
-            self.category = self.category(self, db)
+            self.category = self.category(db)
                 
         def find(self):
                 return 0
@@ -165,7 +165,7 @@ class connection:
         class category:
             def __init__(self, db):
                 self.db = db
-                self.item = self.item(self, db)
+                self.item = self.item(db)
             
             def catalogue(self):
                 return 0

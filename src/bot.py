@@ -1,5 +1,6 @@
 from environment import token, channel
-from phrases.help import roster, guide as help_roster, help_guide
+from phrases.help import roster as help_roster, guide as help_guide
+import functions as method
 import database
 
 import discord
@@ -339,7 +340,7 @@ async def createIndex(ctx):
         color=0xeeeeee
     )
 
-    await message = ctx.send(content=None, embed=embed,)
+    message = await ctx.send(content=None, embed=embed,)
     
     db.index.update(message.id)
 
@@ -347,10 +348,10 @@ async def createIndex(ctx):
 @client.command(name='clearIndex')
 @commands.check(if_guide)
 @commands.has_any_role('Leader', 'Officer')
-async def clearIndexDB(ctx):
+async def clearIndex(ctx):
     await ctx.message.delete()
 
     db.index.clear()
-
+    
 
 client.run(token)
