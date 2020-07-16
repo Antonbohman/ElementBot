@@ -1,4 +1,6 @@
 import re
+import time
+from datetime import datetime
 
 #Define custom methods
 def splitDiscordURL(url):
@@ -11,5 +13,14 @@ def splitDiscordURL(url):
     else:
         return False
 
+
 def createDiscordURL(guildID, channelID, messageID):
     return 'https://discordapp.com/channels/'+guildID+'/'+channelID+'/'+messageID
+
+
+def getTimestamp():
+    return int(time.time())
+
+
+def timestampToUTC(time):
+    return datetime.fromtimestamp(time)

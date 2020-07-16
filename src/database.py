@@ -37,12 +37,17 @@ class connection:
             return self.db.fetch(query, values)
 
         def verify(self, id, id_):
-            query = "UPDATE roster SET Discord = 1, DiscordID = ? WHERE ID = ?"
+            query = "UPDATE roster SET Discord = 1, DiscordID = ? WHERE ID = ? AND Deleted = 0"
             values = (id, id_,)
+            self.db.commit(query, values)
+            
+        def active(self, id, date):
+            query = "UPDATE roster SET LastActive = from_unixtime(?) WHERE ID = ? AND Deleted = 0"
+            values = (date, id,)
             self.db.commit(query, values)
 
         def clear(self, id):
-            query = "UPDATE roster SET Discord = 0, DiscordID = NULL WHERE DiscordID = ?"
+            query = "UPDATE roster SET Discord = 0, DiscordID = NULL WHERE DiscordID = ? AND Deleted = 0"
             values = (id,)
             self.db.commit(query, values)
     
@@ -86,15 +91,20 @@ class connection:
             values = (pid,)
             return self.db.fetch(query, values)
 
-        def bind(self, pid, name):
-            query = "INSERT INTO roster_char (PID, Name) VALUES (?,?)"
-            values = (pid, name,)
+        def bind(self, pid, name, group):
+            query = "INSERT INTO roster_char (PID, Name, Type) VALUES (?,?,?)"
+            values = (pid, name, group,)
             self.db.commit(query, values)
 
         def unbind(self, cid):
-            query = "UPDATE roster_char SET Deleted = 1 WHERE ID = ?"
+            query = "UPDATE roster_char SET Deleted = 1 WHERE ID = ? AND Deleted = 0"
             values = (cid,)
             self.db.commit(query, values)
+            
+        def update(self, cid, group):
+            query = "UPDATE roster_char SET Type = ? WHERE ID = ? AND Deleted = 0"
+            values = (group, cid,)
+            self.db.commit(query, values)    
             
             
         class job:
@@ -102,7 +112,7 @@ class connection:
                 self.db = db    
             
             def update(self, cid, lvs):
-                query = "UPDATE roster_char SET HUN = ?, FIG = ?, RAN = ?, GUN = ?, `FOR` = ?, TEC = ?, BRA = ?, BOU = ?, SUM = ? WHERE ID = ?"           
+                query = "UPDATE roster_char SET HUN = ?, FIG = ?, RAN = ?, GUN = ?, `FOR` = ?, TEC = ?, BRA = ?, BOU = ?, SUM = ? WHERE ID = ? AND Deleted = 0"           
                 values = (lvs[0], lvs[1], lvs[2], lvs[3], lvs[4], lvs[5], lvs[6], lvs[7], lvs[8], cid,)
                 self.db.commit(query, values)
 
@@ -111,40 +121,40 @@ class connection:
                 self.db.commit(query, values)
 
             def hunter(self, cid, lv):
-                query = "UPDATE roster_char SET HUN = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET HUN = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def fighter(self, cid, lv):
-                query = "UPDATE roster_char SET FIG = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET FIG = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def ranger(self, cid, lv):
-                query = "UPDATE roster_char SET RAN = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET RAN = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def gunner(self, cid, lv):
-                query = "UPDATE roster_char SET GUN = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET GUN = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def force(self, cid, lv):
-                query = "UPDATE roster_char SET `FOR` = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET `FOR` = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def techter(self, cid, lv):
-                query = "UPDATE roster_char SET TEC = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET TEC = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def braver(self, cid, lv):
-                query = "UPDATE roster_char SET BRA = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET BRA = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def bouncer(self, cid, lv):
-                query = "UPDATE roster_char SET BOU = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET BOU = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
             def summoner(self, cid, lv):
-                query = "UPDATE roster_char SET SUM = ? WHERE ID = ?"
-                setLevel(query, cid, lv)
+                query = "UPDATE roster_char SET SUM = ? WHERE ID = ? AND Deleted = 0"
+                self.setLevel(query, cid, lv)
 
 
     class index:

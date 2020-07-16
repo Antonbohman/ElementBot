@@ -86,8 +86,12 @@ async def help(ctx):
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
 async def acronym(ctx):
     embed = discord.Embed(
-        title='Class Acronyms',
-        description="""*Hunter* - **HUN**
+        title='Acronyms',
+        description="",
+        color=0xeeeeee
+    )
+    
+    embed.add_field(name='Class', value='''*Hunter* - **HUN**
 *Fighter* - **FIG**
 *Ranger* - **RAN**
 *Gunner* - **GUN**
@@ -95,10 +99,17 @@ async def acronym(ctx):
 *Techter* - **TEC**
 *Braver* - **BRA**
 *Bouncer* - **BOU**
-*Summoner* - **SUM**""",
-        color=0xeeeeee
-    )
+*Summoner* - **SUM**''', inline=False)
     
+    embed.add_field(name='Gender and Race', value='''*Male Human* - **MH**
+*Female Human* - **FH**
+*Male Newman* - **MN**
+*Female Newman* - **FN**
+*Male CAST* - **MC**
+*Female CASR* - **FC**
+*Male Deuman* - **MD**
+*Female Deuman* - **FD**''', inline=False)
+     
     await ctx.send(content=None, embed=embed,)
 
 
@@ -184,29 +195,51 @@ async def verify(ctx, *, pid):
             await ctx.send('The Player ID Name could not be found.')
     else:
         await ctx.send('You have already been verified with the ID: {d[1]}'.format(d=data[0]))
-    
-    
+
+
 @client.command(name='reg')
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
-async def reg(ctx, *, name):
+async def reg(ctx, acr, *, name):
     data = db.user.find(ctx.message.author.id)
 
     if len(data):
         pid = data[0][0]
         user = data[0][1]
         
-        data = db.character.find(pid, name)
-
-        if not len(data):
-            db.character.bind(pid, name)
-            
-            await ctx.send("A character with the name {0} has now been bound to {1}.".format(name, user))
+        if acr == 'MH':
+            group = 2
+        elif acr == 'FH':
+            group = 3
+        elif acr == 'MN':
+            group = 4
+        elif acr == 'FN':
+            group = 5
+        elif acr == 'MC':
+            group = 6
+        elif acr == 'FC':
+            group = 7
+        elif acr == 'MD':
+            group = 8
+        elif acr == 'FD':
+            group = 9
         else:
-            await ctx.send("A character with the name {0} have already been bound to {1}.".format(name, user))
+            group = 0
+        
+        if group:
+            data = db.character.find(pid, name)
+
+            if not len(data):
+                db.character.bind(pid, name, group)
+                
+                await ctx.send("A character with the name {0} has now been bound to {1}.".format(name, user))
+            else:
+                await ctx.send("A character with the name {0} have already been bound to {1}.".format(name, user))
+        else:
+            await ctx.send("The race and gender acronym {0} is not valid.".format(acr))
     else:
-        await ctx.send('You need to link and verify your discord user with a Player ID Name before you can use this command!')    
-    
+        await ctx.send('You need to link and verify your discord user with a Player ID Name before you can use this command!')
+
 
 @client.command(name='unreg')
 @commands.check(if_roster)
@@ -231,10 +264,55 @@ async def unreg(ctx, *, name):
         await ctx.send('You need to link and verify your discord user with a Player ID Name before you can use this command!')    
     
     
+@client.command(name='setgr')
+@commands.check(if_roster)
+@commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
+async def setgr(ctx, acr, *, name):
+    data = db.user.find(ctx.message.author.id)
+
+    if len(data):
+        pid = data[0][0]
+        
+        if acr == 'MH':
+            group = 2
+        elif acr == 'FH':
+            group = 3
+        elif acr == 'MN':
+            group = 4
+        elif acr == 'FN':
+            group = 5
+        elif acr == 'MC':
+            group = 6
+        elif acr == 'FC':
+            group = 7
+        elif acr == 'MD':
+            group = 8
+        elif acr == 'FD':
+            group = 9
+        else:
+            group = 0
+        
+        if group:
+            data = db.character.find(pid, name)
+
+            if len(data):
+                cid = data[0][0]
+
+                db.character.update(cid, group)
+
+                await ctx.send("The race and gender has been updated for {0}.".format(name))
+            else:
+                await ctx.send("That character doesn't exist or doesn't belong to you!")   
+        else:
+            await ctx.send("The race and gender acronym {0} is not valid.".format(acr))
+    else:
+        await ctx.send('You need to link and verify your discord user with a Player ID Name before you can use this command!')
+        
+    
 @client.command(name='level')
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
-async def level(ctx, name, acr, lv: int):
+async def level(ctx, acr, lv: int, *, name):
     data = db.user.find(ctx.message.author.id)
 
     if len(data):
@@ -245,29 +323,30 @@ async def level(ctx, name, acr, lv: int):
         if len(data):
             cid = data[0][0]
             
-            if acr == 'HUN':
-                prepared = db.character.job.hunter
-            elif acr == 'FIG':
-                prepared = db.character.job.fighter
-            elif acr == 'RAN':
-                prepared = db.character.job.ranger
-            elif acr == 'GUN':
-                prepared = db.character.job.gunner
-            elif acr == 'FOR':
-                prepared = db.character.job.force
-            elif acr == 'TEC':
-                prepared = db.character.job.techter
-            elif acr == 'BRA':
-                prepared = db.character.job.braver
-            elif acr == 'BOU':
-                prepared = db.character.job.bouncer
-            elif acr == 'SUM':
-                prepared = db.character.job.summoner
-            else:
-                prepared = False;
+            fault = False
             
-            if prepared:
-                prepared(cid, lv)
+            if acr == 'HUN':
+                db.character.job.hunter(cid, lv)
+            elif acr == 'FIG':
+                db.character.job.fighter(cid, lv)
+            elif acr == 'RAN':
+                db.character.job.ranger(cid, lv)
+            elif acr == 'GUN':
+                db.character.job.gunner(cid, lv)
+            elif acr == 'FOR':
+                db.character.job.force(cid, lv)
+            elif acr == 'TEC':
+                db.character.job.techter(cid, lv)
+            elif acr == 'BRA':
+                db.character.job.braver(cid, lv)
+            elif acr == 'BOU':
+                db.character.job.bouncer(cid, lv)
+            elif acr == 'SUM':
+                db.character.job.summoner(cid, lv)
+            else:
+                fault = True;
+            
+            if not fault:
                 await ctx.send("The class level has been updated for {0}.".format(name))
             else:
                 await ctx.send("The class acronym {0} is not valid or hasn't been implemented yet.".format(acr))
@@ -280,7 +359,7 @@ async def level(ctx, name, acr, lv: int):
 @client.command(name='levelall')
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
-async def levelall(ctx, name, hun: int, fig: int, ran: int, gun: int, forc: int, tec: int, bra: int, bou: int, summ: int):
+async def levelall(ctx, hun: int, fig: int, ran: int, gun: int, forc: int, tec: int, bra: int, bou: int, summ: int, *, name):
     data = db.user.find(ctx.message.author.id)
 
     if len(data):
@@ -318,12 +397,44 @@ async def member(ctx, date, *, pid):
 @commands.check(if_roster)
 @commands.has_any_role('Leader', 'Officer')
 async def remove(ctx, *, pid):
-    data = db.palyer.find(pid)
+    data = db.player.find(pid)
 
     if len(data):
-        db.player.delete(data[0][0], date)
+        db.player.delete(data[0][0])
         
         await ctx.send('Player ID Name {0} has succesfully been removed.'.format(pid))
+    else:
+        await ctx.send('Player ID Name {0} does not exist.'.format(pid))
+        
+        
+@client.command(name='active')
+@commands.check(if_roster)
+@commands.has_any_role('Leader', 'Officer', 'Member', 'Provisional')
+async def active(ctx):
+    data = db.user.find(ctx.message.author.id)
+
+    if len(data):
+        time = method.getTimestamp()
+        db.user.active(data[0][0], time)
+        
+        date = method.timestampToUTC(time)
+        await ctx.send('You have been updated as active at {0}.'.format(date))
+    else:
+       await ctx.send('You need to link and verify your discord user with a Player ID Name before you can use this command!')
+        
+        
+@client.command(name='activate')
+@commands.check(if_roster)
+@commands.has_any_role('Leader', 'Officer')
+async def activate(ctx, *, pid):
+    data = db.player.find(pid)
+
+    if len(data):
+        time = method.getTimestamp()
+        db.user.active(data[0][0], time)
+        
+        date = method.timestampToUTC(time)
+        await ctx.send('Player ID Name {0} has been updated as active at {1}.'.format(pid,date))
     else:
         await ctx.send('Player ID Name {0} does not exist.'.format(pid))
 
