@@ -35,7 +35,7 @@ __**Admin Commands**__
 Date should be formated as *YYYY-MM-DD*
   
 **!remove <Player ID Name>**
-- Remove Player ID Name from the roster
+- Removes Player ID Name from the roster
 
 **!activate <Player ID Name>**
 - Updates last active status for player to current time"""

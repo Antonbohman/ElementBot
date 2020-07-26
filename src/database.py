@@ -27,7 +27,7 @@ class connection:
                 print("MySQL Error [{0}]: {1}".format(e.args[0], e.args[1]))
                 return None
             except IndexError:
-                print("MySQL Error: {0}".str(e))
+                print("MySQL Error: {0}".format(str(e)))
                 return None
         except TypeError as e:
             print(e)
@@ -46,7 +46,7 @@ class connection:
                 print("MySQL Error [{0}]: {1}".format(e.args[0], e.args[1]))
                 self.connection.rollback()
             except IndexError:
-                print("MySQL Error: {0}".str(e))
+                print("MySQL Error: {0}".format(str(e)))
                 self.connection.rollback()
         except TypeError as e:
             print(e)
