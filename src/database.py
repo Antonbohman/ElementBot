@@ -19,14 +19,48 @@ class connection:
     
     #Predefined function to fetch all data from query or commit changes    
     def fetch(self, query, values):
-        self.cursor.execute(query, values)
-        return self.cursor.fetchall()
+        try:
+            self.cursor.execute(query, values)
+            return self.cursor.fetchall()
+        except mysql.Error as e:
+            try:
+                print("MySQL Error [{0}]: {1}".format(e.args[0], e.args[1]))
+                return None
+            except IndexError:
+                print("MySQL Error: {0}".str(e))
+                return None
+        except TypeError as e:
+            print(e)
+            return None
+        except ValueError as e:
+            print(e)
+            return None
+            
     
     def commit(self, query, values):
-        self.cursor.execute(query, values)
-        self.connection.commit()
-        
+        try:
+            self.cursor.execute(query, values)
+            self.connection.commit()
+        except mysql as error :
+            try:
+                print("MySQL Error [{0}]: {1}".format(e.args[0], e.args[1]))
+                self.connection.rollback()
+            except IndexError:
+                print("MySQL Error: {0}".str(e))
+                self.connection.rollback()
+        except TypeError as e:
+            print(e)
+            self.connection.rollback()
+        except ValueError as e:
+            print(e)
+            self.connection.rollback()
+            
     
+    def close(self):
+        self.cursor.close()
+        self.connection.close()
+           
+            
     class user:
         def __init__(self, db):
             self.db = db
@@ -47,7 +81,7 @@ class connection:
             self.db.commit(query, values)
 
         def clear(self, id):
-            query = "UPDATE roster SET Discord = 0, DiscordID = NULL WHERE DiscordID = ? AND Deleted = 0"
+            query = "UPDATE roster SET Discord = 0 WHERE DiscordID = ? AND Deleted = 0"
             values = (id,)
             self.db.commit(query, values)
     
@@ -73,7 +107,7 @@ class connection:
         def delete(self, id):
             query = "UPDATE roster SET Deleted = 1 WHERE ID = ?"
             values = (id,)
-            return self.db.fetch(query, values)
+            self.db.commit(query, values)
     
     
     class character:
