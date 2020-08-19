@@ -4,6 +4,19 @@ import mysql.connector as mysql
 class connection:
     #Constructor of connection and init of classes
     def __init__(self):
+        self.cursor = None
+        self.connection = None
+        
+        self.user = self.user(self)
+        self.player = self.player(self)
+        self.character = self.character(self)
+        self.index = self.index(self)
+    
+    #Open a new connection
+    def connect(self):
+        if self.connection:
+           self.close()
+            
         self.connection = mysql.connect(
             host = db.host,
             user = db.user,
@@ -11,14 +24,20 @@ class connection:
             database = db.database
         )
         self.cursor = self.connection.cursor(prepared=True,)
-        self.user = self.user(self)
-        self.player = self.player(self)
-        self.character = self.character(self)
-        self.index = self.index(self)
+    
+    #Close current conenction
+    def close(self):
+        self.cursor.close()
+        self.connection.close()
+        
+        self.cursor = None
+        self.connection = None
     
     
     #Predefined function to fetch all data from query or commit changes    
     def fetch(self, query, values):
+        self.connect();
+        
         try:
             self.cursor.execute(query, values)
             return self.cursor.fetchall()
@@ -35,13 +54,16 @@ class connection:
         except ValueError as e:
             print(e)
             return None
-            
+
+        self.close();
     
     def commit(self, query, values):
+        self.connect();
+        
         try:
             self.cursor.execute(query, values)
             self.connection.commit()
-        except mysql as error :
+        except mysql.Error as e:
             try:
                 print("MySQL Error [{0}]: {1}".format(e.args[0], e.args[1]))
                 self.connection.rollback()
@@ -55,11 +77,8 @@ class connection:
             print(e)
             self.connection.rollback()
             
-    
-    def close(self):
-        self.cursor.close()
-        self.connection.close()
-           
+        self.close();
+            
             
     class user:
         def __init__(self, db):
@@ -197,73 +216,112 @@ class connection:
             self.category = self.category(db)
                 
         def find(self):
-                return 0
-       
-        def update(self):
-                return 0
+            query = "SELECT * FROM indexing WHERE ID = 1 AND Type = 0"
+            values = ()
+            return self.db.fetch(query, values)
+        
+        def title(self, title):
+            query = "UPDATE indexing SET Title = ? WHERE ID = 1 AND Type = 0"
+            values = (title,)
+            self.db.commit(query, values)    
+
+        def target(self, messageID):
+            query = "UPDATE indexing SET MessageID = ? WHERE ID = 1 AND Type = 0"
+            values = (messageID,)
+            self.db.commit(query, values)
         
         def clear(self):
-                return 0
+            query = "UPDATE indexing SET Title = NULL AND MessageID = NULL WHERE ID = 1 AND Type = 0"
+            values = ()
+            self.db.commit(query, values)
             
             
         class category:
             def __init__(self, db):
                 self.db = db
-                self.item = self.item(db)
+                self.subject = self.subject(db)
+            
+            def find(self, id):
+                query = "SELECT * FROM indexing WHERE ID = ? AND Type = 1"
+                values = (id,)
+                return self.db.fetch(query, values)
             
             def catalogue(self):
-                return 0
+                query = "SELECT * FROM indexing WHERE ParentID = 1 AND Type = 1 ORDER BY Weight ASC"
+                values = ()
+                return self.db.fetch(query, values)
             
-            def add(self):
-                return 0
+            def add(self, title):
+                query = "INSERT INTO indexing (ParentID, Type, Title, Weight) VALUES (1,1,?,0)"
+                values = (title,)
+                self.db.commit(query, values)
             
-            def update(self):
-                return 0            
+            def title(self, id, title):
+                query = "UPDATE indexing SET Title = ? WHERE ID = ? AND Type = 1"
+                values = (title, id,)
+                self.db.commit(query, values)           
             
-            def remove(self):
-                return 0
+            def order(self, id, weight):
+                query = "UPDATE indexing SET Weight = ? WHERE ID = ? AND Type =1"
+                values = (weight, id,)
+                self.db.commit(query, values)
+            
+            def remove(self, id):
+                query = "DELETE FROM indexing WHERE ID = ? AND Type = 1"
+                values = (id,)
+                self.db.commit(query, values) 
+                
+            def clear(self):
+                query = "DELETE FROM indexing WHERE Type = 1"
+                values = ()
+                self.db.commit(query, values) 
             
             
-            class item:
+            class subject:
                 def __init__(self, db):
                     self.db = db   
 
-                def find(self):
-                    return 0
+                def find(self, id):
+                    query = "SELECT * FROM indexing WHERE ID = ? AND Type = 2"
+                    values = (id,)
+                    return self.db.fetch(query, values)
 
-                def add(self):
-                    return 0
-            
-                def title(self):
-                    return 0            
-            
-                def target(self):
-                    return 0            
-            
-                def remove(self):
-                    return 0
-            
+                def catalogue(self, parentID):
+                    query = "SELECT * FROM indexing WHERE ParentID = ? AND Type = 2 ORDER BY Weight ASC"
+                    values = (parentID,)
+                    return self.db.fetch(query, values)
+
+                def add(self, title):
+                    query = "INSERT INTO indexing (ParentID, Type, Title, Weight) VALUES (1,2,?,0)"
+                    values = (title,)
+                    self.db.commit(query, values)
+
+                def parent(self, id, parentID):
+                    query = "UPDATE indexing SET ParentID = ? WHERE ID = ? AND Type = 2"
+                    values = (parentID, id,)
+                    self.db.commit(query, values)      
+
+                def title(self, id, title):
+                    query = "UPDATE indexing SET Title = ? WHERE ID = ? AND Type = 2"
+                    values = (title, id,)
+                    self.db.commit(query, values)           
+
+                def target(self, id, messageID):
+                    query = "UPDATE indexing SET MessageID = ? WHERE ID = ? AND Type =2"
+                    values = (messageID, id,)
+                    self.db.commit(query, values)   
                 
-#        def getIndexList(self, pid):
-#            query = "SELECT * FROM indexing WHERE ID = ?"
-#            values = (pid,)
-#            return self.db.fetch(query, values)
-#
-#        def getIndexListID(self):
-#            query = "SELECT String1 FROM indexing WHERE Type = 0"
-#            return self.db.fetch(query, ())
-#
-#        def setIndexListID(self, messageID):
-#            query = "UPDATE indexing SET String1 = ? WHERE Type = 0"
-#            values = (messageID,)
-#            self.db.commit(query, values)
-#
-#        def setIndexListIDtemp(self, messageID):
-#            query = "INSERT INTO roster_char (PID, Name) VALUES (?,?)"
-#            values = (messageID,)
-#            self.db.commit(query, values)    
-#
-#        def unbindCharacter(self, cid):
-#            query = "UPDATE roster_char SET Deleted = 1 WHERE ID = ?"
-#            values = (cid,)
-#            self.db.commit(query, values)
+                def order(self, id, weight):
+                    query = "UPDATE indexing SET Weight = ? WHERE ID = ? AND Type =2"
+                    values = (weight, id,)
+                    self.db.commit(query, values) 
+            
+                def remove(self, id):
+                    query = "DELETE FROM indexing WHERE ID = ? AND Type = 2"
+                    values = (id,)
+                    self.db.commit(query, values) 
+                
+                def clear(self):
+                    query = "DELETE FROM indexing WHERE Type = 2"
+                    values = ()
+                    self.db.commit(query, values) 

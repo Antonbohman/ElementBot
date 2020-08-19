@@ -15,7 +15,7 @@ def splitDiscordURL(url):
 
 
 def createDiscordURL(guildID, channelID, messageID):
-    return 'https://discordapp.com/channels/'+guildID+'/'+channelID+'/'+messageID
+    return "https://discordapp.com/channels/{0}/{1}/{2}".format(guildID,channelID,messageID)
 
 
 def getTimestamp():
